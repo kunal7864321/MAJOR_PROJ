@@ -18,7 +18,7 @@ pocketbridge/
 │   ├── mobile/       # React Native / Expo mobile application
 │   ├── desktop/      # Electron desktop companion application
 │   └── cli/          # Node.js command-line interface
-├── server/           # Express REST API with Prisma ORM
+├── server/           # Express REST API using PostgreSQL and node-postgres
 │   ├── src/          # Controllers, routes, and middleware
 │   └── storage/      # Local uploaded files (gitignored)
 └── db/               # PostgreSQL schema, seeds, queries, and reports
@@ -33,12 +33,14 @@ createdb pocketbridge
 psql -d pocketbridge -f db/schema.sql
 psql -d pocketbridge -f db/seeds/seed.sql
 ```
+The schema script drops and recreates its tables, so run it only against a new or disposable database.
 
 ### 2. Backend Server
 ```bash
 cd server
 npm install
-cp ../.env.example .env
+cp -n ../.env.example .env
+# Set DATABASE_URL in .env to match your local PostgreSQL role and password.
 npm start
 ```
 The server will run on `http://0.0.0.0:4000`.
@@ -49,11 +51,13 @@ cd apps/mobile
 npm install
 npm start
 ```
+On an Android emulator, the default API address is `http://10.0.2.2:4000/api`. On a physical phone, use your computer's LAN IP and port `4000` in the server URL field.
 
 ### 4. Desktop Client
 ```bash
 cd apps/desktop
 npm install
+npm run build
 npm start
 ```
 

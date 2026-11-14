@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
 function createWindow() {
@@ -7,12 +7,13 @@ function createWindow() {
     height: 700,
     title: 'PocketBridge Desktop Companion',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
 
-  win.loadFile(path.join(__dirname, 'index.html'));
+  const page = app.isPackaged ? 'dist/index.html' : 'index.html';
+  win.loadFile(path.join(__dirname, page));
 }
 
 app.whenReady().then(createWindow);

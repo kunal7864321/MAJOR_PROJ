@@ -8,6 +8,21 @@ const { signToken } = require('../../utils/security');
 // Create pairing code (Called by Desktop)
 router.post('/', requireAuth, async (req, res, next) => {
   try {
+    let serverUrl = `http://${req.get('host')}/api`;
+    if (req.body?.serverUrl !== undefined) {
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(req.body.serverUrl);
+      } catch {
+        return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'A valid server URL is required' } });
+      }
+
+      if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
+        return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Server URL must be an HTTP(S) base URL without credentials or query parameters' } });
+      }
+      serverUrl = parsedUrl.toString().replace(/\/+$/, '');
+    }
+
     const rawCode = crypto.randomBytes(16).toString('hex');
     const codeHash = crypto.createHash('sha256').update(rawCode).digest('hex');
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
@@ -20,7 +35,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     res.status(201).json({
       code: rawCode,
       expiresAt: expiresAt.toISOString(),
-      qrPayload: JSON.stringify({ code: rawCode, serverUrl: `http://${req.hostname}:${process.env.PORT || 4000}/api` })
+      qrPayload: JSON.stringify({ code: rawCode, serverUrl })
     });
   } catch (err) {
     next(err);

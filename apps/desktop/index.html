@@ -2,37 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-src 'none'">
   <title>PocketBridge Companion</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; display: flex; height: 100vh; background: #f8fafc; }
-    aside { width: 220px; background: #0f172a; color: #fff; padding: 20px; }
-    aside h2 { font-size: 18px; margin-bottom: 24px; color: #38bdf8; }
-    aside button { display: block; width: 100%; text-align: left; padding: 10px; margin-bottom: 8px; background: transparent; border: none; color: #cbd5e1; cursor: pointer; border-radius: 4px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; min-height: 100vh; background: #f1f5f9; color: #0f172a; }
+    [hidden] { display: none !important; }
+    .auth { max-width: 420px; margin: 8vh auto; padding: 24px; background: #fff; border-radius: 10px; box-shadow: 0 1px 5px #0002; }
+    input { box-sizing: border-box; width: 100%; padding: 11px; margin: 6px 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    label { display: block; font-size: 13px; color: #475569; }
+    button { cursor: pointer; }
+    .btn { background: #2563eb; color: #fff; border: 0; padding: 9px 14px; border-radius: 6px; }
+    .secondary { border: 0; background: transparent; color: #2563eb; padding: 10px; }
+    #message { padding: 10px; margin: 12px 0; border-radius: 6px; background: #dcfce7; color: #166534; }
+    #message.error { background: #fee2e2; color: #991b1b; }
+    .layout { display: flex; min-height: 100vh; }
+    aside { width: 210px; flex-shrink: 0; background: #0f172a; color: #fff; padding: 20px; }
+    aside h2 { font-size: 18px; margin: 0 0 24px; color: #38bdf8; }
+    aside button { display: block; width: 100%; text-align: left; padding: 10px; margin-bottom: 8px; background: transparent; border: 0; color: #cbd5e1; border-radius: 4px; }
     aside button.active { background: #1e293b; color: #fff; font-weight: bold; }
     main { flex: 1; padding: 24px; overflow-y: auto; }
-    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
-    .btn { background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px #0002; margin-bottom: 16px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-    #qrContainer { text-align: center; margin: 20px 0; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; overflow-wrap: anywhere; }
+    .pairing-code { font-size: 26px; letter-spacing: 3px; font-weight: bold; margin: 20px 0 6px; }
+    .lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    li { margin: 8px 0; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
-  <aside>
-    <h2>PocketBridge</h2>
-    <button class="active" onclick="showTab('inbox')">File Inbox</button>
-    <button onclick="showTab('pairing')">Device Pairing</button>
-    <button onclick="showTab('notes')">Notes & Tasks</button>
-  </aside>
-  <main id="content">
-    <div class="card">
-      <h3>Files Received From Mobile</h3>
-      <table id="fileTable">
-        <thead><tr><th>File Name</th><th>Size</th><th>Source Device</th><th>Actions</th></tr></thead>
-        <tbody id="fileBody"><tr><td colspan="4">Loading files...</td></tr></tbody>
-      </table>
-    </div>
-  </main>
-  <script src="renderer.js"></script>
+  <section id="authView" class="auth" hidden>
+    <h1>PocketBridge</h1>
+    <p id="authTitle">Sign in to PocketBridge</p>
+    <form id="authForm">
+      <label for="serverUrl">API server URL</label>
+      <input id="serverUrl" type="url" required>
+      <div id="fullNameField" hidden>
+        <label for="fullName">Full name</label>
+        <input id="fullName" autocomplete="name">
+      </div>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button id="authSubmit" class="btn" type="submit">Sign in</button>
+      <button id="authToggle" class="secondary" type="button">Need an account? Register</button>
+    </form>
+  </section>
+
+  <div id="appView" class="layout" hidden>
+    <aside>
+      <h2>PocketBridge</h2>
+      <button class="active" data-tab="inbox">File Inbox</button>
+      <button data-tab="pairing">Device Pairing</button>
+      <button data-tab="notes">Notes &amp; Tasks</button>
+      <button id="logout" class="secondary">Sign out</button>
+    </aside>
+    <main>
+      <div id="message" role="status" hidden></div>
+      <section data-panel="inbox">
+        <div class="card">
+          <div class="row">
+            <h3>Files from your devices</h3>
+            <button id="refreshFiles" class="btn" type="button">Refresh</button>
+          </div>
+          <table>
+            <thead><tr><th>File Name</th><th>Size</th><th>Source Device</th><th>Actions</th></tr></thead>
+            <tbody id="fileBody"><tr><td colspan="4">Loading files...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section data-panel="pairing" hidden>
+        <div class="card">
+          <h3>Pair a mobile device</h3>
+          <p>Generate a one-time code and enter it in the mobile app. The code expires after five minutes.</p>
+          <button id="generatePairing" class="btn" type="button">Generate pairing code</button>
+          <div id="pairingCode" class="pairing-code" aria-live="polite"></div>
+          <div id="pairingExpiry"></div>
+        </div>
+      </section>
+      <section data-panel="notes" hidden>
+        <div class="lists">
+          <div class="card"><h3>Notes</h3><ul id="notesList"></ul></div>
+          <div class="card"><h3>Tasks</h3><ul id="tasksList"></ul></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./renderer.js"></script>
 </body>
 </html>

@@ -2,8 +2,8 @@ let token = null;
 let baseUrl = 'http://localhost:4000/api';
 
 export function configureApi(newToken, newUrl) {
-  if (newToken) token = newToken;
-  if (newUrl) baseUrl = newUrl;
+  if (newToken !== undefined) token = newToken;
+  if (newUrl) baseUrl = newUrl.replace(/\/+$/, '');
 }
 
 export async function apiRequest(endpoint, options = {}) {
@@ -18,11 +18,8 @@ export async function apiRequest(endpoint, options = {}) {
     headers
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Request failed');
+  const responseText = await res.text();
+  const data = responseText ? JSON.parse(responseText) : null;
+  if (!res.ok) throw new Error(data?.error?.message || 'Request failed');
   return data;
 }
-
-// Added network timeout retry
-
-// Shekhar: added network timeout and retry handling
