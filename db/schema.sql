@@ -1,4 +1,4 @@
--- PocketBridge PostgreSQL Relational Schema
+[-- PocketBridge PostgreSQL Relational Schema
 -- Designed for 3NF compliance with explicit integrity constraints
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

@@ -1,0 +1,64 @@
+erDiagram
+  USERS ||--o{ DEVICES : owns
+  DEVICES ||--o{ NOTES : stores
+  DEVICES ||--o{ TASKS : tracks
+  DEVICES ||--o{ FILES : source_device
+  DEVICES o|--o{ FILES : target_device
+  DEVICES ||--o{ PAIRING_CODES : creates
+  DEVICES o|--o{ PAIRING_CODES : consumes
+  DEVICES ||--o{ ACTIVITY_LOGS : records
+
+  USERS {
+    uuid user_id PK
+    varchar full_name
+    varchar email UK
+    varchar password_hash
+    timestamptz created_at
+  }
+  DEVICES {
+    uuid device_id PK
+    uuid user_id FK
+    varchar device_name
+    varchar platform
+    boolean is_active
+    timestamptz last_seen_at
+  }
+  NOTES {
+    uuid note_id PK
+    uuid device_id FK
+    varchar title
+    text body
+    boolean is_pinned
+  }
+  TASKS {
+    uuid task_id PK
+    uuid device_id FK
+    varchar title
+    varchar priority
+    varchar status
+    timestamptz due_at
+  }
+  FILES {
+    uuid file_id PK
+    uuid source_device_id FK
+    uuid target_device_id FK
+    varchar storage_key UK
+    bigint size_bytes
+    varchar checksum_sha256
+    varchar status
+  }
+  PAIRING_CODES {
+    uuid pairing_id PK
+    uuid created_by_device_id FK
+    uuid consumed_by_device_id FK
+    varchar code_hash UK
+    timestamptz expires_at
+    timestamptz used_at
+  }
+  ACTIVITY_LOGS {
+    uuid activity_id PK
+    uuid device_id FK
+    varchar action_type
+    varchar target_type
+    varchar target_id
+  }

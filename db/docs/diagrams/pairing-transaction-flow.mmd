@@ -1,0 +1,11 @@
+flowchart LR
+  A[Receive code] --> B[BEGIN transaction]
+  B --> C[SELECT pairing row FOR UPDATE]
+  C --> D{Exists, unused, unexpired?}
+  D -- No --> E[ROLLBACK and return error]
+  D -- Yes --> F[Insert paired device]
+  F --> G[Mark code consumed]
+  G --> H[COMMIT and return token]
+  I[Concurrent consume request] --> C
+  C -. waits for row lock .-> I
+  H --> J[Waiting request sees used_at; returns conflict]
